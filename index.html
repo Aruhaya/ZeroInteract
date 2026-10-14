@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZeroInteract | The Next-Gen Event Experience & Tamper-Proof Ticketing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f050b',
+                        cardBg: '#1a0916',
+                        cardElevated: '#240c1f',
+                        accentRed: '#ff1f59',
+                        accentPurple: '#9d00ff'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-darkBg text-gray-100 font-sans antialiased selection:bg-accentRed selection:text-white">
+
+    <!-- ================= HEADER NAVIGATION BAR ================= -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-darkBg/90 border-b border-red-950/40 shadow-xl">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <a href="index.html" class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-accentRed to-accentPurple flex items-center justify-center shadow-lg shadow-accentRed/30 group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-calendar-days text-white font-bold text-xl"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-white via-red-200 to-accentRed bg-clip-text text-transparent leading-none">ZeroInteract</span>
+                    <span class="text-[10px] text-gray-400 font-mono tracking-widest uppercase mt-0.5">Tamper-Proof Ticketing</span>
+                </div>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold text-gray-300">
+                <a href="#events-section" class="hover:text-accentRed transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-fire text-accentRed text-xs"></i>
+                    <span>Explore Events</span>
+                </a>
+                <a href="#security-section" class="hover:text-accentPurple transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved text-accentPurple text-xs"></i>
+                    <span>Security & Tech</span>
+                </a>
+                <a href="#about-section" class="hover:text-white transition-colors">
+                    <span>About Us</span>
+                </a>
+                <a href="#portals-section" class="hover:text-white transition-colors">
+                    <span>Portals</span>
+                </a>
+            </nav>
+
+            <!-- Action Buttons: Attendee Sign In, Event Manager & SSO Gateway -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button type="button" onclick="openSsoModal()" class="px-3.5 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 transition-all shadow-md shadow-accentRed/20 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Sign In (SSO)</span>
+                </button>
+                <a href="user.html" class="hidden sm:flex px-3.5 py-2.5 rounded-xl font-bold text-xs bg-darkBg border border-red-950 hover:border-accentRed text-gray-200 hover:text-white transition-all items-center space-x-1.5">
+                    <i class="fa-solid fa-user text-accentRed"></i>
+                    <span>Attendee Portal</span>
+                </a>
+                <a href="admin.html" class="hidden sm:flex px-3.5 py-2.5 rounded-xl font-bold text-xs bg-darkBg border border-purple-950 hover:border-accentPurple text-gray-200 hover:text-white transition-all items-center space-x-1.5">
+                    <i class="fa-solid fa-user-shield text-accentPurple"></i>
+                    <span>Manager Portal</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= SINGLE SIGN-ON (SSO) MODAL ================= -->
+    <div id="sso-modal" class="fixed inset-0 z-[9998] bg-black/85 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-cardBg max-w-md w-full p-8 rounded-3xl border border-red-950/70 shadow-2xl shadow-purple-950/40 space-y-6">
+            <div class="text-center space-y-2">
+                <div class="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-tr from-accentRed to-accentPurple items-center justify-center text-white text-xl shadow-lg shadow-accentRed/30 mb-1">
+                    <i class="fa-solid fa-fingerprint"></i>
+                </div>
+                <h3 class="text-xl font-black text-white">Single Sign-On (SSO) Portal Gateway</h3>
+                <p class="text-xs text-gray-400">One identity per attendee to prevent duplicate entries & fraud.</p>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-darkBg border border-red-950/70 text-xs space-y-1">
+                <div class="flex items-center text-accentRed font-semibold">
+                    <i class="fa-solid fa-route mr-1.5"></i>
+                    <span>Authentication Routing Policy</span>
+                </div>
+                <p class="text-gray-400 leading-relaxed">
+                    Emails containing <strong class="text-accentPurple font-mono font-bold">"admin"</strong> route strictly to <strong class="text-purple-300">Manager Portal</strong>. All other emails route to <strong class="text-accentRed">Attendee Portal</strong>.
+                </p>
+            </div>
+
+            <form onsubmit="handleIndexSsoSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Your Full Name</label>
+                    <input id="sso-input-name" type="text" placeholder="e.g. Judge Christopher Nolan" class="w-full bg-darkBg border border-red-950/70 rounded-xl px-4 py-3 text-sm text-gray-100 focus:outline-none focus:border-accentRed transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Email Address</label>
+                    <input id="sso-input-email" type="email" required placeholder="attendee@example.com or admin@zero.io" class="w-full bg-darkBg border border-red-950/70 rounded-xl px-4 py-3 text-sm text-gray-100 focus:outline-none focus:border-accentRed transition-all">
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 transition-all shadow-lg shadow-accentRed/30 flex items-center justify-center space-x-2">
+                    <span>Sign In & Route to Portal</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </form>
+
+            <div class="pt-2 border-t border-red-950/50 flex flex-col space-y-2">
+                <span class="text-[10px] uppercase font-bold text-gray-500 tracking-wider text-center">Quick Routing Demos:</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="quickSso('judge.walker@techfest.org', 'Judge Walker')" class="py-2 px-2.5 rounded-xl bg-darkBg border border-red-950 text-gray-300 hover:text-white hover:border-accentRed text-xs font-semibold transition-all truncate text-center">
+                        <i class="fa-solid fa-user text-accentRed mr-1"></i> Attendee
+                    </button>
+                    <button type="button" onclick="quickSso('admin@zero.io', 'Event Director')" class="py-2 px-2.5 rounded-xl bg-darkBg border border-purple-950 text-gray-300 hover:text-white hover:border-accentPurple text-xs font-semibold transition-all truncate text-center">
+                        <i class="fa-solid fa-user-shield text-accentPurple mr-1"></i> Admin
+                    </button>
+                </div>
+                <button type="button" onclick="closeSsoModal()" class="w-full py-2 text-xs text-gray-500 hover:text-gray-300 transition-colors">
+                    Close Window
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= HERO SECTION ================= -->
+    <section class="relative overflow-hidden pt-16 pb-24 border-b border-red-950/30">
+        <!-- Glowing Ambient Circles -->
+        <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-b from-accentPurple/20 via-accentRed/10 to-transparent blur-3xl pointer-events-none rounded-full"></div>
+        <div class="absolute top-1/3 -left-32 w-80 h-80 bg-accentRed/10 blur-3xl pointer-events-none rounded-full"></div>
+        <div class="absolute top-1/2 -right-32 w-80 h-80 bg-accentPurple/10 blur-3xl pointer-events-none rounded-full"></div>
+
+        <div class="max-w-7xl mx-auto px-6 relative z-10 text-center space-y-8">
+            <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-cardBg border border-red-950 text-xs font-mono text-gray-300 shadow-inner">
+                <span class="w-2 h-2 rounded-full bg-accentRed animate-pulse"></span>
+                <span>Zero Counterfeit • Real-time Dynamic QR Passes • Decentralized Wallets</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight">
+                The Next-Gen Platform For 
+                <span class="bg-gradient-to-r from-white via-red-200 to-accentRed bg-clip-text text-transparent">Immersive Tech Events</span> 
+                & Instant Entry Verification.
+            </h1>
+
+            <p class="max-w-2xl mx-auto text-gray-400 text-base sm:text-lg leading-relaxed">
+                ZeroInteract revolutionizes hackathons, developer conferences, and tech summits. Explore live events without mandatory login, experience 3D flip card previews, and gain access through cryptographically tamper-proof dynamic QR passes.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <a href="#events-section" class="w-full sm:w-auto px-8 py-4 rounded-2xl font-extrabold text-sm bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 shadow-xl shadow-accentRed/30 transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-compass"></i>
+                    <span>Explore Live Events</span>
+                </a>
+                <a href="user.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-sm bg-cardBg border border-red-950/80 hover:border-accentRed text-gray-200 hover:text-white transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-wallet text-accentRed"></i>
+                    <span>Attendee Wallet Dashboard (₹800)</span>
+                </a>
+                <a href="admin.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-sm bg-cardBg border border-purple-950/80 hover:border-accentPurple text-gray-200 hover:text-white transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-camera text-accentPurple"></i>
+                    <span>Launch Admin Scanner</span>
+                </a>
+            </div>
+
+            <!-- Trust / Performance Stats Bar -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-10">
+                <div class="p-5 rounded-2xl bg-cardBg/80 border border-red-950/60 backdrop-blur-sm">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-accentRed font-mono">100%</h3>
+                    <p class="text-xs text-gray-400 mt-1 uppercase tracking-wider font-semibold">Anti-Scalping Security</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-cardBg/80 border border-red-950/60 backdrop-blur-sm">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-purple-400 font-mono">&lt; 0.2s</h3>
+                    <p class="text-xs text-gray-400 mt-1 uppercase tracking-wider font-semibold">Gate Verification Speed</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-cardBg/80 border border-red-950/60 backdrop-blur-sm">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono">₹0 Fee</h3>
+                    <p class="text-xs text-gray-400 mt-1 uppercase tracking-wider font-semibold">Free Event Registration</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-cardBg/80 border border-red-950/60 backdrop-blur-sm">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-white font-mono">Offline-First</h3>
+                    <p class="text-xs text-gray-400 mt-1 uppercase tracking-wider font-semibold">Tamper Proof Token Hash</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= EXPLORE EVENTS CATALOG WITH 3D CARD FLIP ================= -->
+    <section id="events-section" class="py-20 border-b border-red-950/30">
+        <div class="max-w-7xl mx-auto px-6 space-y-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <span class="text-xs font-bold text-accentRed uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-sparkles"></i> Discovery Catalog
+                    </span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-1">Live & Upcoming Events</h2>
+                    <p class="text-gray-400 text-sm mt-1 max-w-xl">
+                        Hover over any card to flip and view the schedule preview. Click anywhere on the card to open its dedicated elaborated info page!
+                    </p>
+                </div>
+                <div class="flex items-center space-x-2 text-xs text-gray-400 bg-cardBg px-4 py-2.5 rounded-2xl border border-red-950/60 self-start md:self-auto">
+                    <i class="fa-solid fa-arrow-rotate-right text-accentPurple"></i>
+                    <span>Hover card to flip 3D • Click card for full page</span>
+                </div>
+            </div>
+
+            <!-- Dynamic 3D Flip Card Events Grid -->
+            <div id="home-events-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Injected dynamically by renderHomeEventsCatalog() -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PLATFORM SECURITY ARCHITECTURE ================= -->
+    <section id="security-section" class="py-20 border-b border-red-950/30 bg-gradient-to-b from-darkBg via-[#140510] to-darkBg">
+        <div class="max-w-7xl mx-auto px-6 space-y-12">
+            <div class="text-center space-y-3 max-w-3xl mx-auto">
+                <span class="text-xs font-bold text-accentPurple uppercase tracking-widest">Enterprise Cryptography</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white">How ZeroInteract Prevents Ticket Fraud</h2>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Traditional barcode tickets and screenshots suffer from counterfeit scalping, duplicate entries, and gate chaos. ZeroInteract utilizes deterministic cryptographic tokens linked directly to attendee wallets.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-cardBg p-8 rounded-3xl border border-red-950/60 relative overflow-hidden group hover:border-accentRed/50 transition-all">
+                    <div class="w-12 h-12 rounded-2xl bg-accentRed/10 border border-accentRed/30 flex items-center justify-center text-accentRed text-2xl mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Dynamic Anti-Screenshot Pass</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Every ticket is assigned a unique alphanumeric token (e.g. <span class="font-mono text-accentRed">ZI-HACK-8812</span>) rendered on an active canvas with animated laser verification lines to defeat static photo screenshots.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="bg-cardBg p-8 rounded-3xl border border-red-950/60 relative overflow-hidden group hover:border-accentPurple/50 transition-all">
+                    <div class="w-12 h-12 rounded-2xl bg-accentPurple/10 border border-accentPurple/30 flex items-center justify-center text-accentPurple text-2xl mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-lock-check"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">One-Time Burn on Scan</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        The moment an Event Manager simulates or scans a pass at the gate, the token status is immediately marked as verified in the database. Any duplicate scan attempt flashes a loud red error refusal.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="bg-cardBg p-8 rounded-3xl border border-red-950/60 relative overflow-hidden group hover:border-emerald-500/50 transition-all">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-2xl mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Pre-Funded Wallet Integrity</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Instant frictionless checkout backed by persistent client-side state. Starting with ₹800 INR, attendees can register for free workshops or purchase passes with zero payment gateway latency.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= ABOUT US SECTION ================= -->
+    <section id="about-section" class="py-20 border-b border-red-950/30">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="bg-cardBg p-8 sm:p-12 rounded-3xl border border-red-950/50 grid lg:grid-cols-2 gap-10 items-center">
+                <div class="space-y-6">
+                    <span class="text-xs font-bold text-accentRed uppercase tracking-widest">About ZeroInteract</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+                        Built for Builders, Hackers & Event Organizers Worldwide.
+                    </h2>
+                    <p class="text-sm text-gray-300 leading-relaxed">
+                        ZeroInteract was conceived during a high-stakes hackathon to solve the most painful bottleneck of physical and hybrid tech events: clunky registration lines, unreliable Wi-Fi verification, and scalped tickets.
+                    </p>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Our client-first architecture leverages browser storage and deterministic cryptographic rendering to allow full offline-tolerant gate validation, instant ticket booking, and real-time manager analytics.
+                    </p>
+                    <div class="flex flex-wrap gap-4 pt-2">
+                        <div class="flex items-center space-x-2 text-xs font-semibold text-gray-300 bg-darkBg px-4 py-2.5 rounded-xl border border-red-950">
+                            <i class="fa-solid fa-shield text-accentRed"></i>
+                            <span>Zero Scalping Guaranteed</span>
+                        </div>
+                        <div class="flex items-center space-x-2 text-xs font-semibold text-gray-300 bg-darkBg px-4 py-2.5 rounded-xl border border-red-950">
+                            <i class="fa-solid fa-bolt text-yellow-400"></i>
+                            <span>Instant Ticket Issuance</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-darkBg p-6 sm:p-8 rounded-2xl border border-red-950/60 space-y-5">
+                    <h3 class="text-lg font-bold text-white flex items-center">
+                        <i class="fa-solid fa-diagram-project text-accentPurple mr-2"></i> System Architecture Highlights
+                    </h3>
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3.5 rounded-xl bg-cardBg border border-red-950/40 flex items-start space-x-3">
+                            <span class="w-6 h-6 rounded-lg bg-accentRed/20 text-accentRed flex items-center justify-center font-bold font-mono">01</span>
+                            <div>
+                                <strong class="text-white block font-semibold">Decentralized Client State</strong>
+                                <span class="text-gray-400">Stores mock wallet (₹800), event catalogs, and active passes in localStorage.</span>
+                            </div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-cardBg border border-red-950/40 flex items-start space-x-3">
+                            <span class="w-6 h-6 rounded-lg bg-accentPurple/20 text-accentPurple flex items-center justify-center font-bold font-mono">02</span>
+                            <div>
+                                <strong class="text-white block font-semibold">Deterministic QR Canvas Engine</strong>
+                                <span class="text-gray-400">Generates 21x21 matrix codes derived from token entropy, fully offline.</span>
+                            </div>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-cardBg border border-red-950/40 flex items-start space-x-3">
+                            <span class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold font-mono">03</span>
+                            <div>
+                                <strong class="text-white block font-semibold">Event Creator Hub</strong>
+                                <span class="text-gray-400">Organizers can publish full events with schedule, speakers, and pricing directly.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PORTAL JUNCTION / SIGN UP SECTION ================= -->
+    <section id="portals-section" class="py-20">
+        <div class="max-w-7xl mx-auto px-6 space-y-12">
+            <div class="text-center space-y-2">
+                <span class="text-xs font-bold text-accentRed uppercase tracking-widest">Get Started Today</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Choose Your Portal Experience</h2>
+                <p class="text-gray-400 text-sm">Whether you are an eager attendee looking for tickets or an organizer running an event.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- Attendee Portal Card -->
+                <div class="bg-cardBg p-8 rounded-3xl border border-red-950/80 hover:border-accentRed/60 transition-all flex flex-col justify-between space-y-6 shadow-xl shadow-purple-950/10">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-accentRed to-accentPurple flex items-center justify-center text-white text-xl shadow-lg shadow-accentRed/30">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <span class="text-xs font-mono text-accentRed bg-accentRed/10 px-3 py-1 rounded-full border border-accentRed/30">
+                            For Attendees & Students
+                        </span>
+                        <h3 class="text-2xl font-bold text-white">Attendee Dashboard & Wallet</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed">
+                            Access your starting wallet balance of ₹800 INR, browse upcoming workshops, purchase passes, and view your dynamic entry QR pass with full screen laser verification.
+                        </p>
+                    </div>
+                    <a href="user.html" class="w-full py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 transition-all shadow-lg shadow-accentRed/30 flex items-center justify-center space-x-2">
+                        <span>Enter Attendee Portal</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+
+                <!-- Event Manager Card -->
+                <div class="bg-cardBg p-8 rounded-3xl border border-red-950/80 hover:border-accentPurple/60 transition-all flex flex-col justify-between space-y-6 shadow-xl shadow-purple-950/10">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-accentPurple to-accentRed flex items-center justify-center text-white text-xl shadow-lg shadow-accentPurple/30">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <span class="text-xs font-mono text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/30">
+                            For Hosts & Event Managers
+                        </span>
+                        <h3 class="text-2xl font-bold text-white">Event Manager Control Center</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed">
+                            Create new events with full agendas and speakers, launch the live gate camera barcode simulator, inspect real-time check-in stats, and prevent duplicate entry fraud.
+                        </p>
+                    </div>
+                    <a href="admin.html" class="w-full py-3.5 rounded-xl font-bold text-sm bg-cardBg border border-purple-900/60 hover:border-accentPurple text-gray-100 hover:text-white transition-all shadow-md flex items-center justify-center space-x-2">
+                        <span>Enter Event Manager Portal</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="border-t border-red-950/40 bg-darkBg/90 py-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-gray-500">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-accentRed to-accentPurple flex items-center justify-center text-white text-sm">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </div>
+                <span class="font-bold text-gray-300 text-sm">ZeroInteract Ticketing System</span>
+            </div>
+            <p>© 2026 ZeroInteract. Hackathon MVP Prototype. Pure Vanilla JS & localStorage.</p>
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="hover:text-accentRed transition-colors">Home</a>
+                <a href="user.html" class="hover:text-accentRed transition-colors">Attendee Portal</a>
+                <a href="admin.html" class="hover:text-accentPurple transition-colors">Event Manager</a>
+                <button onclick="ZeroInteract.resetDemoDatabase()" class="hover:text-yellow-400 transition-colors">Reset Demo Data</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script>
+        function renderHomeEventsCatalog() {
+            const grid = document.getElementById('home-events-grid');
+            if (!grid) return;
+
+            const events = ZeroInteract.getEvents();
+            grid.innerHTML = '';
+
+            events.forEach(event => {
+                const isFree = event.price === 0;
+                const priceFormatted = isFree ? 'Free (₹0)' : `₹${event.price}`;
+                const priceBadge = isFree
+                    ? `<span class="text-xs font-extrabold text-emerald-400 font-mono">Free Registration</span>`
+                    : `<span class="text-xs font-extrabold text-gray-200 font-mono">₹${event.price} / Pass</span>`;
+
+                const cardContainer = document.createElement('div');
+                cardContainer.className = 'flip-card';
+
+                // Clicking anywhere on card navigates to event.html?id=...
+                // But buttons inside can also execute their actions without conflict
+                cardContainer.innerHTML = `
+                    <div class="flip-card-inner">
+                        <!-- FRONT OF CARD -->
+                        <div class="flip-card-front bg-cardBg p-6 rounded-3xl border border-red-950/60 shadow-xl shadow-purple-950/10 hover:border-accentRed/50 transition-colors">
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="px-3 py-1 rounded-full text-[11px] font-semibold border ${event.badgeColor}">
+                                        ${event.category}
+                                    </span>
+                                    <span class="text-[10px] font-mono text-gray-400 bg-darkBg px-2 py-0.5 rounded border border-red-950/40">
+                                        <i class="fa-solid fa-rotate mr-1 text-accentRed"></i> Hover to flip
+                                    </span>
+                                </div>
+                                <h3 class="font-extrabold text-lg text-white group-hover:text-accentRed transition-colors pt-1 line-clamp-2">
+                                    ${event.title}
+                                </h3>
+                                <p class="text-xs text-gray-400 leading-relaxed line-clamp-3">
+                                    ${event.shortSummary || event.description}
+                                </p>
+                            </div>
+
+                            <div class="space-y-3 pt-3 border-t border-red-950/40">
+                                <div class="text-xs text-gray-400 space-y-1">
+                                    <p class="flex items-center"><i class="fa-regular fa-calendar mr-2 text-accentRed text-xs"></i> ${event.date}</p>
+                                    <p class="flex items-center truncate"><i class="fa-solid fa-location-dot mr-2 text-accentPurple text-xs"></i> ${event.venue}</p>
+                                </div>
+                                <div class="flex items-center justify-between pt-1">
+                                    ${priceBadge}
+                                    <span class="text-xs font-bold text-accentRed hover:underline flex items-center gap-1">
+                                        Details <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BACK OF CARD (FLIPPED ON HOVER) -->
+                        <div class="flip-card-back bg-cardElevated p-6 rounded-3xl border border-purple-500/50 shadow-2xl flex flex-col justify-between">
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[10px] uppercase font-bold text-accentPurple tracking-widest font-mono">Quick Overview</span>
+                                    <span class="text-xs font-mono font-bold text-white bg-darkBg px-2 py-0.5 rounded border border-purple-950">${priceFormatted}</span>
+                                </div>
+                                <h4 class="font-bold text-base text-white line-clamp-2">${event.title}</h4>
+                                <p class="text-xs text-gray-300 line-clamp-4 leading-relaxed">${event.description}</p>
+                                
+                                <div class="text-[11px] text-gray-400 space-y-1 pt-1">
+                                    <p><strong class="text-gray-200">Host:</strong> ${event.organizer || 'ZeroInteract Network'}</p>
+                                    <p class="truncate"><strong class="text-gray-200">Tracks:</strong> ${event.agenda && event.agenda[0] ? event.agenda[0].slice(8) : 'Keynote & Workshops'}</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 pt-3 border-t border-red-950/60">
+                                <a href="event.html?id=${event.id}" onclick="event.stopPropagation()" class="w-full py-2.5 rounded-xl font-bold text-xs bg-darkBg border border-red-950 hover:border-accentRed text-white text-center block transition-all flex items-center justify-center space-x-1.5 shadow-md">
+                                    <i class="fa-solid fa-circle-info text-accentRed"></i>
+                                    <span>View Elaborated Info Page</span>
+                                </a>
+                                <a href="user.html" onclick="event.stopPropagation()" class="w-full py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-accentRed to-accentPurple text-white text-center block hover:opacity-90 transition-all shadow-md shadow-accentRed/30 flex items-center justify-center space-x-1.5">
+                                    <i class="fa-solid fa-ticket"></i>
+                                    <span>Buy Ticket (${priceFormatted})</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Card click opens event.html?id=...
+                cardContainer.addEventListener('click', (e) => {
+                    // if target is not a button or link, navigate to event page
+                    if (!e.target.closest('a') && !e.target.closest('button')) {
+                        window.location.href = `event.html?id=${event.id}`;
+                    }
+                });
+
+                grid.appendChild(cardContainer);
+            });
+        }
+
+        function openSsoModal() {
+            const modal = document.getElementById('sso-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeSsoModal() {
+            const modal = document.getElementById('sso-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function handleIndexSsoSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('sso-input-email').value;
+            const name = document.getElementById('sso-input-name').value;
+            ZeroInteract.handleGlobalAuthRouting(email, name);
+        }
+
+        function quickSso(email, name) {
+            document.getElementById('sso-input-email').value = email;
+            document.getElementById('sso-input-name').value = name;
+            ZeroInteract.handleGlobalAuthRouting(email, name);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderHomeEventsCatalog();
+        });
+    </script>
+</body>
+</html>

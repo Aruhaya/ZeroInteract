@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Details | ZeroInteract</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f050b',
+                        cardBg: '#1a0916',
+                        cardElevated: '#240c1f',
+                        accentRed: '#ff1f59',
+                        accentPurple: '#9d00ff'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-darkBg text-gray-100 font-sans antialiased selection:bg-accentRed selection:text-white min-h-screen flex flex-col justify-between">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col space-y-3 pointer-events-none max-w-sm w-full"></div>
+
+    <!-- ================= INSUFFICIENT BALANCE MODAL ================= -->
+    <div id="balance-modal" class="fixed inset-0 z-[9998] bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-cardBg max-w-md w-full p-8 rounded-3xl border border-red-500/50 shadow-2xl shadow-red-950/60 text-center space-y-5">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-accentRed text-3xl">
+                <i class="fa-solid fa-triangle-exclamation animate-bounce"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-extrabold text-white">Insufficient Wallet Funds</h3>
+                <p id="balance-modal-msg" class="text-sm text-gray-300 mt-2 leading-relaxed">
+                    You do not have enough balance in your wallet for this pass.
+                </p>
+            </div>
+            <div class="bg-darkBg p-4 rounded-2xl border border-red-950/60 flex items-center justify-between text-sm">
+                <span class="text-gray-400">Current Balance:</span>
+                <span class="wallet-balance-val font-bold text-accentRed">₹800</span>
+            </div>
+            <div class="flex space-x-3">
+                <button type="button" onclick="closeBalanceModal()" class="flex-1 py-3 rounded-xl font-bold text-sm bg-darkBg border border-red-950 text-gray-300 hover:text-white hover:border-accentRed transition-all">
+                    Cancel
+                </button>
+                <button type="button" onclick="addFunds(500)" class="flex-1 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 transition-all shadow-lg shadow-accentRed/30">
+                    + Add ₹500
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= HEADER NAVIGATION ================= -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-darkBg/90 border-b border-red-950/40 shadow-xl">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="index.html" class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-accentRed to-accentPurple flex items-center justify-center shadow-lg shadow-accentRed/30">
+                    <i class="fa-solid fa-calendar-days text-white font-bold text-xl"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-white via-red-200 to-accentRed bg-clip-text text-transparent leading-none">ZeroInteract</span>
+                    <span class="text-[10px] text-gray-400 font-mono tracking-widest uppercase mt-0.5">Event Detailed Dossier</span>
+                </div>
+            </a>
+
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                <!-- Live Wallet Display -->
+                <div class="flex items-center space-x-2 bg-cardBg px-3.5 py-2 rounded-2xl border border-red-950/70 shadow-inner">
+                    <i class="fa-solid fa-wallet text-accentRed text-xs"></i>
+                    <span class="text-[11px] uppercase font-bold text-gray-400">Wallet:</span>
+                    <span class="wallet-balance-val text-sm font-extrabold text-emerald-400">₹800</span>
+                    <button onclick="addFunds(500)" class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-darkBg text-accentRed font-bold hover:text-white">+₹500</button>
+                </div>
+
+                <a href="index.html#events-section" class="px-4 py-2 rounded-xl text-xs font-bold bg-darkBg border border-red-950 hover:border-accentRed text-gray-300 hover:text-white transition-all flex items-center space-x-1.5">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span class="hidden sm:inline">All Events</span>
+                </a>
+
+                <a href="user.html" class="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-accentRed to-accentPurple text-white shadow-md shadow-accentRed/20 hover:opacity-90 transition-all flex items-center space-x-1.5">
+                    <i class="fa-solid fa-user"></i>
+                    <span class="hidden sm:inline">My Passes</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= EVENT DOSSIER CONTENT ================= -->
+    <main class="max-w-7xl mx-auto px-6 py-10 w-full space-y-10">
+
+        <!-- Hero Header Card -->
+        <div class="bg-cardBg p-6 sm:p-10 rounded-3xl border border-red-950/50 relative overflow-hidden shadow-2xl shadow-purple-950/20">
+            <div class="absolute -right-16 -top-16 w-80 h-80 bg-accentPurple/10 blur-3xl pointer-events-none rounded-full"></div>
+            <div class="absolute -left-16 -bottom-16 w-80 h-80 bg-accentRed/10 blur-3xl pointer-events-none rounded-full"></div>
+
+            <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <div class="space-y-3 max-w-3xl">
+                    <div class="flex items-center space-x-3">
+                        <span id="event-category-badge" class="px-3.5 py-1 rounded-full text-xs font-semibold border">
+                            Category
+                        </span>
+                        <span id="event-organizer-badge" class="text-xs text-gray-400 font-mono flex items-center">
+                            <i class="fa-solid fa-building-columns mr-1.5 text-accentPurple"></i> Organizer
+                        </span>
+                    </div>
+
+                    <h1 id="event-title" class="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
+                        Loading Event Information...
+                    </h1>
+
+                    <div class="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-gray-300 pt-1">
+                        <span class="flex items-center bg-darkBg px-3.5 py-2 rounded-xl border border-red-950">
+                            <i class="fa-regular fa-calendar-check text-accentRed mr-2"></i>
+                            <span id="event-date">Date & Time</span>
+                        </span>
+                        <span class="flex items-center bg-darkBg px-3.5 py-2 rounded-xl border border-red-950">
+                            <i class="fa-solid fa-location-dot text-accentPurple mr-2"></i>
+                            <span id="event-venue">Venue</span>
+                        </span>
+                        <span class="flex items-center bg-darkBg px-3.5 py-2 rounded-xl border border-red-950">
+                            <i class="fa-solid fa-shield-halved text-emerald-400 mr-2"></i>
+                            <span>ZeroInteract Verified Entry</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Price & Checkout Widget -->
+                <div class="bg-darkBg/90 p-6 rounded-2xl border border-red-950/80 w-full lg:w-72 shrink-0 space-y-4 shadow-xl">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] uppercase font-bold text-gray-400 tracking-wider">Pass Pricing</span>
+                        <span id="event-price-display" class="text-2xl font-black text-white font-mono">₹0</span>
+                    </div>
+
+                    <div id="checkout-action-area">
+                        <button id="btn-buy-ticket" onclick="handleBuyTicketHere()" class="w-full py-3.5 rounded-xl font-extrabold text-sm bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 transition-all shadow-lg shadow-accentRed/30 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-ticket"></i>
+                            <span id="btn-buy-text">Buy Ticket (₹0)</span>
+                        </button>
+                    </div>
+
+                    <p class="text-[11px] text-gray-400 text-center leading-tight">
+                        Deducted directly from mock wallet. Instant alphanumeric pass generated with zero latency.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2-Column Layout: Details / Agenda vs Speakers & Security -->
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Left 2 Cols: Elaborated Description & Detailed Agenda -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Elaborated Description -->
+                <div class="bg-cardBg p-6 sm:p-8 rounded-3xl border border-red-950/40 space-y-4">
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <i class="fa-solid fa-align-left text-accentRed mr-3"></i> Elaborated Event Overview
+                    </h2>
+                    <p id="event-description" class="text-sm text-gray-300 leading-relaxed">
+                        Loading detailed overview...
+                    </p>
+                </div>
+
+                <!-- Detailed Agenda / Schedule Tracks -->
+                <div class="bg-cardBg p-6 sm:p-8 rounded-3xl border border-red-950/40 space-y-5">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <i class="fa-solid fa-timeline text-accentPurple mr-3"></i> Schedule & Session Breakdown
+                        </h2>
+                        <span class="text-xs font-mono text-gray-400">Live Agenda</span>
+                    </div>
+                    
+                    <div id="event-agenda-list" class="space-y-3">
+                        <!-- Agenda items injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Speakers, Verification Notice & Active Pass -->
+            <div class="space-y-8">
+                <!-- Featured Speakers / Hosts -->
+                <div class="bg-cardBg p-6 sm:p-8 rounded-3xl border border-red-950/40 space-y-4">
+                    <h3 class="text-lg font-bold text-white flex items-center">
+                        <i class="fa-solid fa-microphone text-accentRed mr-2.5"></i> Featured Speakers & Hosts
+                    </h3>
+                    <div id="event-speakers-list" class="space-y-3">
+                        <!-- Speakers list injected here -->
+                    </div>
+                </div>
+
+                <!-- Pass Verification Card (If already purchased or bought) -->
+                <div id="dossier-pass-card" class="bg-cardBg p-6 sm:p-8 rounded-3xl border border-red-950/40 text-center space-y-4 hidden">
+                    <span class="text-[10px] font-bold text-accentRed uppercase tracking-widest block">Your Issued Pass</span>
+                    <h4 class="font-bold text-white text-base">Entry Pass Generated</h4>
+                    
+                    <div class="w-40 h-40 mx-auto bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center relative overflow-hidden">
+                        <canvas id="dossier-qr-canvas" width="134" height="134"></canvas>
+                        <div class="absolute inset-x-0 h-0.5 bg-accentRed animate-scanline pointer-events-none"></div>
+                    </div>
+
+                    <div class="bg-darkBg p-3 rounded-xl border border-red-950 font-mono text-xs text-white tracking-widest">
+                        Token: <strong id="dossier-qr-token" class="text-accentRed">--</strong>
+                    </div>
+
+                    <a href="user.html" class="w-full py-2.5 rounded-xl font-bold text-xs bg-darkBg border border-red-950 hover:border-accentRed text-gray-200 hover:text-white block transition-all">
+                        Open in Full Attendee Portal ➔
+                    </a>
+                </div>
+
+                <!-- Platform Security Guarantee Box -->
+                <div class="bg-darkBg p-6 rounded-3xl border border-red-950/70 space-y-3">
+                    <div class="flex items-center space-x-2 text-emerald-400 text-sm font-bold">
+                        <i class="fa-solid fa-shield-check"></i>
+                        <span>ZeroInteract Verification Guarantee</span>
+                    </div>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Tickets purchased for this event are cryptographically generated into your local wallet. Event managers scan this pass using the Live QR Camera Scanner at the gate, which invalidates the token against any counterfeit or duplicate entries.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-red-950/40 bg-darkBg/90 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+            <span>© 2026 ZeroInteract. Hackathon Event Verification System.</span>
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="hover:text-accentRed">Home</a>
+                <a href="user.html" class="hover:text-accentRed">Attendee Portal</a>
+                <a href="admin.html" class="hover:text-accentPurple">Event Manager</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script>
+        let currentEvent = null;
+
+        function getEventIdFromQuery() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        function loadEventDetails() {
+            const id = getEventIdFromQuery();
+            const events = ZeroInteract.getEvents();
+
+            currentEvent = events.find(e => e.id === id);
+
+            // Fallback to first event if invalid
+            if (!currentEvent && events.length > 0) {
+                currentEvent = events[0];
+            }
+
+            if (!currentEvent) {
+                document.getElementById('event-title').textContent = 'Event Not Found';
+                return;
+            }
+
+            // Populate DOM
+            document.title = `${currentEvent.title} | ZeroInteract`;
+            document.getElementById('event-title').textContent = currentEvent.title;
+            document.getElementById('event-description').textContent = currentEvent.description;
+            document.getElementById('event-date').textContent = currentEvent.date;
+            document.getElementById('event-venue').textContent = currentEvent.venue;
+            
+            const catBadge = document.getElementById('event-category-badge');
+            if (catBadge) {
+                catBadge.className = `px-3.5 py-1 rounded-full text-xs font-semibold border ${currentEvent.badgeColor}`;
+                catBadge.textContent = currentEvent.category;
+            }
+
+            const orgBadge = document.getElementById('event-organizer-badge');
+            if (orgBadge) {
+                orgBadge.innerHTML = `<i class="fa-solid fa-building-columns mr-1.5 text-accentPurple"></i> ${currentEvent.organizer || 'ZeroInteract Host'}`;
+            }
+
+            const isFree = currentEvent.price === 0;
+            const priceText = isFree ? 'Free (₹0)' : `₹${currentEvent.price}`;
+            document.getElementById('event-price-display').textContent = priceText;
+            document.getElementById('btn-buy-text').textContent = `Buy Ticket (${priceText})`;
+
+            // Populate Agenda
+            const agendaList = document.getElementById('event-agenda-list');
+            if (agendaList) {
+                agendaList.innerHTML = '';
+                const agenda = currentEvent.agenda || ['10:00 AM - Check-in & Keynote', '01:00 PM - Track Presentations'];
+                agenda.forEach((item, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'p-4 rounded-2xl bg-darkBg border border-red-950/60 flex items-start space-x-3.5 text-xs sm:text-sm';
+                    row.innerHTML = `
+                        <div class="w-7 h-7 rounded-lg bg-accentPurple/20 text-accentPurple font-mono font-bold flex items-center justify-center shrink-0 text-xs">
+                            ${(idx + 1).toString().padStart(2, '0')}
+                        </div>
+                        <div class="flex-1 text-gray-200 font-medium pt-0.5">
+                            ${item}
+                        </div>
+                    `;
+                    agendaList.appendChild(row);
+                });
+            }
+
+            // Populate Speakers
+            const speakersList = document.getElementById('event-speakers-list');
+            if (speakersList) {
+                speakersList.innerHTML = '';
+                const speakers = currentEvent.speakers || [{ name: 'Host Lead', role: 'Event Director', company: 'ZeroInteract' }];
+                speakers.forEach(spk => {
+                    const spkRow = document.createElement('div');
+                    spkRow.className = 'p-3.5 rounded-xl bg-darkBg border border-red-950/50 flex items-center space-x-3';
+                    spkRow.innerHTML = `
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-accentRed to-accentPurple flex items-center justify-center text-white font-bold text-sm shrink-0">
+                            ${spk.name.charAt(0)}
+                        </div>
+                        <div class="overflow-hidden">
+                            <h4 class="font-bold text-sm text-white truncate">${spk.name}</h4>
+                            <p class="text-xs text-gray-400 truncate">${spk.role} • <span class="text-accentRed">${spk.company}</span></p>
+                        </div>
+                    `;
+                    speakersList.appendChild(spkRow);
+                });
+            }
+
+            // Check if user already holds a ticket for this event
+            checkExistingRegistration();
+        }
+
+        function checkExistingRegistration() {
+            if (!currentEvent) return;
+            const regs = ZeroInteract.getRegistrations();
+            const session = ZeroInteract.getAttendeeSession();
+            if (!session || !session.isLoggedIn) return;
+
+            const existing = regs.find(r => r.eventId === currentEvent.id && (r.userEmail === session.email || r.userName === session.name));
+
+            if (existing) {
+                const passCard = document.getElementById('dossier-pass-card');
+                const tokenEl = document.getElementById('dossier-qr-token');
+                const canvas = document.getElementById('dossier-qr-canvas');
+                const btnBuy = document.getElementById('btn-buy-ticket');
+                
+                if (passCard) passCard.classList.remove('hidden');
+                if (tokenEl) tokenEl.textContent = existing.qr_token;
+                if (canvas) ZeroInteract.drawQrCanvas(canvas, existing.qr_token);
+                if (btnBuy) {
+                    btnBuy.disabled = true;
+                    btnBuy.className = 'w-full py-3.5 rounded-xl font-bold text-xs bg-darkBg border border-emerald-500/50 text-emerald-400 cursor-default flex items-center justify-center space-x-2';
+                    btnBuy.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>Pass Issued to ${existing.userName}</span>`;
+                }
+            }
+        }
+
+        function handleBuyTicketHere() {
+            if (!currentEvent) return;
+
+            const session = ZeroInteract.getAttendeeSession();
+            if (!session || !session.isLoggedIn || !session.name) {
+                ZeroInteract.showToast("Please sign in with your name in the Attendee Portal first!", "error");
+                setTimeout(() => {
+                    window.location.href = 'user.html';
+                }, 800);
+                return;
+            }
+
+            const res = ZeroInteract.buyTicket(currentEvent.id);
+            if (res.success) {
+                ZeroInteract.showToast(`Pass issued for "${currentEvent.title}" to ${res.registration.userName}! Token: ${res.registration.qr_token}`, 'success');
+                checkExistingRegistration();
+            } else if (res.reason === 'INSUFFICIENT_FUNDS') {
+                const modal = document.getElementById('balance-modal');
+                const msg = document.getElementById('balance-modal-msg');
+                if (msg) msg.textContent = `This ticket pass requires ₹${res.required}, but your wallet balance is only ₹${res.current}.`;
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+                ZeroInteract.showToast(`Insufficient funds: ₹${res.current} available, ₹${res.required} required`, 'error');
+            }
+        }
+
+        function closeBalanceModal() {
+            const modal = document.getElementById('balance-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function addFunds(amt) {
+            const current = ZeroInteract.getWalletBalance();
+            ZeroInteract.setWalletBalance(current + amt);
+            closeBalanceModal();
+            ZeroInteract.showToast(`Added ₹${amt} to wallet! Current balance: ₹${current + amt}`, 'success');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadEventDetails();
+        });
+    </script>
+</body>
+</html>
+

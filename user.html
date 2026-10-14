@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendee Portal & Dynamic Passes | ZeroInteract</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f050b',
+                        cardBg: '#1a0916',
+                        cardElevated: '#240c1f',
+                        accentRed: '#ff1f59',
+                        accentPurple: '#9d00ff'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-darkBg text-gray-100 font-sans antialiased selection:bg-accentRed selection:text-white min-h-screen flex flex-col justify-between">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col space-y-3 pointer-events-none max-w-sm w-full"></div>
+
+    <!-- ================= INSUFFICIENT BALANCE MODAL ================= -->
+    <div id="balance-modal" class="fixed inset-0 z-[9998] bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-cardBg max-w-md w-full p-8 rounded-3xl border border-red-500/50 shadow-2xl shadow-red-950/60 text-center space-y-5">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-accentRed text-3xl">
+                <i class="fa-solid fa-triangle-exclamation animate-bounce"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-extrabold text-white">Insufficient Wallet Balance</h3>
+                <p id="balance-modal-msg" class="text-sm text-gray-300 mt-2 leading-relaxed">
+                    You do not have enough funds in your wallet to purchase this ticket.
+                </p>
+            </div>
+            <div class="bg-darkBg p-4 rounded-2xl border border-red-950/60 flex items-center justify-between text-sm">
+                <span class="text-gray-400">Current Balance:</span>
+                <span class="wallet-balance-val font-bold text-accentRed">₹800</span>
+            </div>
+            <div class="flex space-x-3">
+                <button type="button" onclick="closeBalanceModal()" class="flex-1 py-3 rounded-xl font-bold text-sm bg-darkBg border border-red-950 text-gray-300 hover:text-white hover:border-accentRed transition-all">
+                    Cancel
+                </button>
+                <button type="button" onclick="topUpWallet(500)" class="flex-1 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 transition-all shadow-lg shadow-accentRed/30">
+                    + Add ₹500
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= QR PASS RECORDING MODAL ================= -->
+    <div id="qr-pass-modal" class="fixed inset-0 z-[9998] bg-black/85 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-cardBg max-w-md w-full p-6 sm:p-8 rounded-3xl border border-red-950/70 shadow-2xl shadow-purple-950/40 text-center space-y-5">
+            <div class="flex items-center justify-between pb-2 border-b border-red-950/50">
+                <div class="text-left">
+                    <span class="text-[10px] font-bold text-accentRed uppercase tracking-widest block font-mono">Dynamic Entry Pass</span>
+                    <h3 id="modal-pass-title" class="text-base font-extrabold text-white truncate max-w-[280px]">Event Title</h3>
+                </div>
+                <button type="button" onclick="closeQrPassModal()" class="text-gray-400 hover:text-white p-2 rounded-xl bg-darkBg border border-red-950/60">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Large QR Canvas with laser scanline -->
+            <div class="relative w-52 h-52 mx-auto bg-white p-4 rounded-2xl shadow-2xl flex items-center justify-center overflow-hidden border border-red-950/40">
+                <canvas id="modal-qr-canvas" width="176" height="176" class="rounded-lg"></canvas>
+                <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-accentRed to-transparent shadow-[0_0_12px_#ff1f59] animate-scanline pointer-events-none"></div>
+            </div>
+
+            <!-- Prominently displayed unique alphanumeric qr_token for video recording -->
+            <div class="space-y-1.5 text-left bg-darkBg p-3.5 rounded-2xl border border-red-950/70">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Unique Pass Token (qr_token)</span>
+                    <span class="text-[10px] text-accentRed font-mono font-bold">Linked in localStorage</span>
+                </div>
+                <div id="modal-qr-token-val" class="font-mono text-xl sm:text-2xl font-black tracking-widest select-all bg-cardBg py-2 px-3 rounded-xl border border-red-950/50 text-center break-all shadow-inner text-accentRed">
+                    ZI-XXXX-####
+                </div>
+                <p id="modal-pass-holder" class="text-[11px] text-gray-400 font-mono text-center">Holder: Registered Attendee</p>
+            </div>
+
+            <!-- Big Copy Token Button for Video Recording / Scanner -->
+            <button type="button" onclick="copyModalQrToken()" class="w-full py-3.5 rounded-xl font-extrabold text-sm bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 transition-all shadow-lg shadow-accentRed/30 flex items-center justify-center space-x-2">
+                <i class="fa-regular fa-copy"></i>
+                <span>Copy QR Token for Scanner</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= HEADER NAVIGATION ================= -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-darkBg/90 border-b border-red-950/40 shadow-xl">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="index.html" class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-accentRed to-accentPurple flex items-center justify-center shadow-lg shadow-accentRed/30">
+                    <i class="fa-solid fa-calendar-days text-white font-bold text-xl"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-white via-red-200 to-accentRed bg-clip-text text-transparent leading-none">ZeroInteract</span>
+                    <span class="text-[10px] text-gray-400 font-mono tracking-widest uppercase mt-0.5">Attendee Portal</span>
+                </div>
+            </a>
+
+            <!-- Right Controls: Wallet, Attendee Badge & Sign Out Button -->
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                <!-- Prominent Wallet Display -->
+                <div class="flex items-center space-x-2.5 bg-cardBg px-4 py-2 rounded-2xl border border-red-950/70 shadow-inner">
+                    <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xs">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider leading-none">Wallet</span>
+                        <span class="wallet-balance-val text-sm font-extrabold text-emerald-400 tracking-wide mt-0.5">₹800</span>
+                    </div>
+                    <button onclick="topUpWallet(500)" title="Add ₹500 Mock Funds" class="ml-1 p-1 px-1.5 rounded-lg bg-darkBg border border-red-950 text-accentRed hover:text-white hover:bg-accentRed/20 text-xs transition-all font-bold">
+                        +₹500
+                    </button>
+                </div>
+
+                <!-- Attendee Name Badge (Visible when logged in) -->
+                <div id="nav-user-badge" class="hidden sm:flex items-center space-x-2 bg-darkBg px-3.5 py-2 rounded-2xl border border-red-950/60 text-xs font-semibold text-gray-300">
+                    <i class="fa-solid fa-circle-user text-accentRed"></i>
+                    <span id="nav-user-name" class="font-bold text-white max-w-[120px] truncate">Attendee</span>
+                </div>
+
+                <!-- Sign Out Button -->
+                <button id="btn-signout" onclick="handleAttendeeSignOut()" title="Sign Out of Attendee Portal" class="px-3.5 py-2 rounded-xl bg-cardBg border border-red-950/70 hover:border-red-500/50 text-gray-300 hover:text-red-400 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="hidden sm:inline">Sign Out</span>
+                </button>
+
+                <!-- Home link -->
+                <a href="index.html" title="Explore Home" class="p-2.5 rounded-2xl bg-cardBg border border-red-950/60 text-gray-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-house"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= ATTENDEE AUTHENTICATION SCREEN ================= -->
+    <div id="attendee-auth-screen" class="py-16 px-6 flex items-center justify-center flex-1">
+        <div class="max-w-md w-full bg-cardBg p-8 sm:p-10 rounded-3xl border border-red-950/60 shadow-2xl shadow-purple-950/30 space-y-6">
+            <div class="text-center space-y-2">
+                <div class="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-accentRed to-accentPurple items-center justify-center text-white text-2xl shadow-lg shadow-accentRed/30 mb-2">
+                    <i class="fa-solid fa-id-card"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold text-white">Attendee Sign In & Identification</h2>
+                <p class="text-xs text-gray-400 leading-relaxed">
+                    Enter your full name and credentials. <strong class="text-accentRed">Whatever name you fill in here will be stamped on your ticket passes and appear on the gate attendance sheet.</strong>
+                </p>
+            </div>
+
+            <form onsubmit="handleAttendeeSignInSubmit(event)" class="space-y-4">
+                <!-- Full Name Input -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Your Full Name <span class="text-accentRed">*</span>
+                    </label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-4 top-3.5 text-gray-500 text-sm"></i>
+                        <input id="auth-attendee-name" type="text" required placeholder="e.g. Judge Alan Turing or John Doe" 
+                            class="w-full bg-darkBg border border-red-950/70 rounded-xl px-4 py-3 pl-11 text-sm text-gray-100 focus:outline-none focus:border-accentRed transition-all">
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-1">This exact name will be verified at the entrance gate.</p>
+                </div>
+
+                <!-- Email Address -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Email Address <span class="text-accentRed">*</span>
+                    </label>
+                    <div class="relative">
+                        <i class="fa-solid fa-envelope absolute left-4 top-3.5 text-gray-500 text-sm"></i>
+                        <input id="auth-attendee-email" type="email" required placeholder="attendee@example.com" 
+                            class="w-full bg-darkBg border border-red-950/70 rounded-xl px-4 py-3 pl-11 text-sm text-gray-100 focus:outline-none focus:border-accentRed transition-all">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Password <span class="text-accentRed">*</span>
+                    </label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-4 top-3.5 text-gray-500 text-sm"></i>
+                        <input id="auth-attendee-pass" type="password" required value="password123" placeholder="••••••••" 
+                            class="w-full bg-darkBg border border-red-950/70 rounded-xl px-4 py-3 pl-11 text-sm text-gray-100 focus:outline-none focus:border-accentRed transition-all">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3.5 rounded-xl font-extrabold text-sm bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 transition-all shadow-lg shadow-accentRed/30 flex items-center justify-center space-x-2">
+                    <span>Enter Attendee Portal (₹800 Wallet)</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </form>
+
+            <!-- Quick Autofill Presets for Judges -->
+            <div class="pt-2 border-t border-red-950/50">
+                <span class="text-[10px] uppercase font-bold text-gray-500 tracking-wider block mb-2 text-center">Quick Judge Autofill:</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="autofillAttendee('Judge Chris Walker', 'chris.judge@hackathon.org')" class="py-2 px-2.5 rounded-xl bg-darkBg border border-red-950 text-gray-300 hover:text-white hover:border-accentRed text-xs font-semibold transition-all truncate text-center">
+                        Judge Chris Walker
+                    </button>
+                    <button type="button" onclick="autofillAttendee('Judge Elena Rostova', 'elena.judge@techfest.io')" class="py-2 px-2.5 rounded-xl bg-darkBg border border-red-950 text-gray-300 hover:text-white hover:border-accentRed text-xs font-semibold transition-all truncate text-center">
+                        Judge Elena Rostova
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAIN ATTENDEE DASHBOARD VIEW ================= -->
+    <main id="attendee-dashboard" class="max-w-7xl mx-auto px-6 py-8 sm:py-12 w-full space-y-12 hidden">
+
+        <!-- Welcome Banner -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-cardBg p-6 sm:p-8 rounded-3xl border border-red-950/40 shadow-xl shadow-purple-950/20 gap-4">
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-semibold text-accentRed uppercase tracking-widest">Attendee Dashboard</span>
+                    <span class="text-[10px] bg-red-950/60 text-gray-400 px-2 py-0.5 rounded-md font-mono" id="attendee-email-badge">attendee@example.com</span>
+                </div>
+                <h1 id="attendee-greeting" class="text-2xl sm:text-3xl font-extrabold mt-1">Welcome back, Attendee!</h1>
+                <p class="text-gray-400 text-sm mt-1">Browse upcoming tech events, purchase entry passes, and access your verified dynamic QR passes.</p>
+            </div>
+            
+            <div class="flex items-center space-x-4 bg-darkBg/80 p-3.5 rounded-2xl border border-red-950/60">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-accentRed to-accentPurple flex items-center justify-center text-white text-base shadow-md shadow-accentRed/20">
+                    <i class="fa-solid fa-coins text-yellow-400"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider block">Wallet Balance</span>
+                    <span class="wallet-balance-val text-xl font-extrabold text-emerald-400 font-mono">₹800</span>
+                </div>
+                <button onclick="topUpWallet(500)" class="ml-2 px-3 py-1.5 rounded-xl bg-cardBg border border-red-950 text-xs font-bold text-accentRed hover:text-white hover:border-accentRed transition-all">
+                    + Top Up
+                </button>
+            </div>
+        </div>
+
+        <!-- 2-Column: My Registered Events & Digital QR Pass -->
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Left 2 Cols: My Registered Events -->
+            <div class="lg:col-span-2 bg-cardBg p-6 sm:p-8 rounded-3xl border border-red-950/40 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <i class="fa-solid fa-ticket text-accentRed mr-3"></i> My Registered Events
+                        </h2>
+                        <span id="registered-badge-count" class="text-xs font-mono px-3 py-1 rounded-full bg-accentRed/10 text-accentRed border border-accentRed/30">
+                            0 Passes
+                        </span>
+                    </div>
+
+                    <div id="user-registered-list" class="space-y-4">
+                        <!-- Injected dynamically by renderMyRegistrations() -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Col: Digital QR Pass Card -->
+            <div class="bg-cardBg p-6 sm:p-8 rounded-3xl border border-red-950/40 text-center flex flex-col items-center justify-between space-y-5">
+                <div class="w-full">
+                    <span class="text-[10px] font-bold text-accentRed uppercase tracking-widest block">Official Venue Pass</span>
+                    <h3 id="active-pass-title" class="text-lg font-bold text-white mt-1 line-clamp-1">Select an Event</h3>
+                    <p id="active-pass-details" class="text-xs text-gray-400 mt-0.5">Click "View QR Pass" on any registration</p>
+                </div>
+
+                <!-- QR Canvas & Laser Animation -->
+                <div class="relative w-48 h-48 bg-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-center border border-red-950/30 overflow-hidden">
+                    <canvas id="user-qr-canvas" width="160" height="160" class="rounded-lg"></canvas>
+                    <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-accentRed to-transparent shadow-[0_0_12px_#ff1f59] animate-scanline pointer-events-none"></div>
+                </div>
+
+                <!-- Monospace Token String -->
+                <div class="w-full bg-darkBg border border-red-950/80 p-3 rounded-2xl space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Pass QR Token</span>
+                        <button onclick="copyCurrentQrToken()" title="Copy Token" class="text-[11px] font-semibold text-accentRed hover:text-white transition-all flex items-center space-x-1">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <div id="active-pass-token" class="font-mono text-sm sm:text-base font-extrabold text-white tracking-widest select-all bg-cardBg/60 py-1.5 px-3 rounded-xl border border-red-950/40 break-all text-center">
+                        NONE-SELECTED
+                    </div>
+                </div>
+
+                <!-- Pass Status Badge & Holder Name -->
+                <div id="active-pass-status" class="w-full space-y-1">
+                    <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/30 inline-flex items-center">
+                        <i class="fa-solid fa-shield-check mr-1.5"></i> Token Valid & Ready
+                    </span>
+                    <p id="active-pass-holder" class="text-[11px] text-gray-400 font-mono"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= DISCOVERY CATALOG WITH 3D CARD FLIP ================= -->
+        <div class="bg-cardBg p-6 sm:p-8 rounded-3xl border border-red-950/40 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <span class="text-xs font-semibold text-accentRed uppercase tracking-widest">Discovery Catalog</span>
+                    <h2 class="text-2xl font-bold mt-1">Check Out Other Events</h2>
+                    <p class="text-gray-400 text-sm">Hover over any card to flip 3D and see details. Click card to open full dossier, or click Buy Ticket.</p>
+                </div>
+                <div class="text-xs text-gray-400 bg-darkBg px-3.5 py-2 rounded-xl border border-red-950/60 self-start sm:self-auto font-mono">
+                    <i class="fa-solid fa-coins text-yellow-400 mr-1.5"></i> Paid prices: ₹100 - ₹700 (Multiples of 50)
+                </div>
+            </div>
+
+            <!-- Dynamic 3D Flip Card Discovery Grid -->
+            <div id="user-discovery-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Injected dynamically by renderDiscoveryCatalog() -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-red-950/40 bg-darkBg/90 py-8">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+            <span>© 2026 ZeroInteract. Hackathon MVP Prototype. Pure Vanilla JS & localStorage.</span>
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="hover:text-accentRed">Home</a>
+                <button onclick="ZeroInteract.resetDemoDatabase()" class="hover:text-yellow-400">Reset Prototype State</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script>
+        let currentSelectedToken = null;
+
+        function loadUserPortal() {
+            const session = ZeroInteract.getAttendeeSession();
+
+            const authScreen = document.getElementById('attendee-auth-screen');
+            const dashboard = document.getElementById('attendee-dashboard');
+            const navBadge = document.getElementById('nav-user-badge');
+            const navName = document.getElementById('nav-user-name');
+            const btnSignOut = document.getElementById('btn-signout');
+
+            if (!session || !session.isLoggedIn || !session.name) {
+                // Show Auth Screen
+                if (authScreen) authScreen.classList.remove('hidden');
+                if (dashboard) dashboard.classList.add('hidden');
+                if (navBadge) navBadge.classList.add('hidden');
+                if (btnSignOut) btnSignOut.classList.add('hidden');
+                return;
+            }
+
+            // User is signed in!
+            if (authScreen) authScreen.classList.add('hidden');
+            if (dashboard) dashboard.classList.remove('hidden');
+            if (navBadge) navBadge.classList.remove('hidden');
+            if (navName) navName.textContent = session.name;
+            if (btnSignOut) btnSignOut.classList.remove('hidden');
+
+            const greeting = document.getElementById('attendee-greeting');
+            const badge = document.getElementById('attendee-email-badge');
+
+            if (greeting) greeting.textContent = `Welcome back, ${session.name}!`;
+            if (badge) badge.textContent = session.email;
+
+            renderMyRegistrations();
+            renderDiscoveryCatalog();
+        }
+
+        // Handle Sign-in submit
+        function handleAttendeeSignInSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('auth-attendee-name').value;
+            const email = document.getElementById('auth-attendee-email').value;
+
+            // Authentication & Identity Routing: If email contains 'admin', route strictly to Manager Portal
+            if (email.toLowerCase().includes('admin')) {
+                ZeroInteract.handleGlobalAuthRouting(email, name);
+                return;
+            }
+
+            ZeroInteract.saveAttendeeSession(name, email);
+            ZeroInteract.showToast(`Signed in as ${name}! Welcome to ZeroInteract.`, 'success');
+            loadUserPortal();
+        }
+
+        function autofillAttendee(name, email) {
+            document.getElementById('auth-attendee-name').value = name;
+            document.getElementById('auth-attendee-email').value = email;
+        }
+
+        function handleAttendeeSignOut() {
+            if (confirm("Sign out of Attendee Portal?")) {
+                ZeroInteract.signOutAttendee();
+                currentSelectedToken = null;
+                ZeroInteract.showToast("Signed out of Attendee Portal", "info");
+                loadUserPortal();
+            }
+        }
+
+        // Render My Registered Events List
+        function renderMyRegistrations() {
+            const container = document.getElementById('user-registered-list');
+            const badgeCount = document.getElementById('registered-badge-count');
+            if (!container) return;
+
+            const registrations = ZeroInteract.getRegistrations();
+            const session = ZeroInteract.getAttendeeSession();
+            const userEmail = session.email || 'attendee@example.com';
+            const userName = session.name || 'Attendee';
+
+            // Show passes belonging to this attendee (by email or exact name)
+            const myEvents = registrations.filter(r => 
+                r.userEmail === userEmail || 
+                r.userName === userName
+            );
+
+            if (badgeCount) badgeCount.textContent = `${myEvents.length} Passes`;
+
+            if (myEvents.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center bg-darkBg rounded-2xl border border-dashed border-red-950/60 space-y-3">
+                        <i class="fa-solid fa-ticket-simple text-3xl text-gray-600"></i>
+                        <p class="text-sm text-gray-400">No registered events yet for <strong class="text-white">${userName}</strong>.</p>
+                        <p class="text-xs text-gray-500">Explore the discovery catalog below and buy a pass with your starting ₹800 wallet balance.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            myEvents.forEach(reg => {
+                const item = document.createElement('div');
+                item.className = "p-5 rounded-2xl bg-darkBg border border-red-950/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-red-950 transition-all";
+
+                const isChecked = reg.attended === true;
+                const statusBadge = isChecked 
+                    ? `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/30 flex items-center gap-1.5"><i class="fa-solid fa-check-double text-[10px]"></i> Checked In (${reg.attendedAt || 'Gate 1'})</span>`
+                    : `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-accentRed/10 text-accentRed border border-accentRed/30 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-accentRed animate-pulse"></span> Pass Ready</span>`;
+
+                item.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            ${statusBadge}
+                            <span class="text-[11px] font-mono text-gray-400">Token: <strong class="text-white">${reg.qr_token}</strong></span>
+                        </div>
+                        <h3 class="font-bold text-lg text-white mt-1">${reg.eventTitle}</h3>
+                        <p class="text-xs text-gray-400"><i class="fa-regular fa-clock mr-1 text-accentRed"></i> ${reg.eventDate}</p>
+                        <p class="text-[11px] text-gray-500 font-mono">Attendee: <strong class="text-gray-300">${reg.userName}</strong></p>
+                    </div>
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <button onclick="displayPass('${reg.qr_token}', true)" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 transition-all shadow-md shadow-accentRed/20 flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-qrcode"></i>
+                            <span>View QR Pass</span>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+            // Auto display first pass on sidebar if none active
+            if (!currentSelectedToken && myEvents.length > 0) {
+                displayPass(myEvents[0].qr_token, false);
+            }
+        }
+
+        // Display unique qr_token visually on canvas and optionally pop modal
+        function displayPass(qrToken, openModal = false) {
+            const registrations = ZeroInteract.getRegistrations();
+            const reg = registrations.find(r => r.qr_token === qrToken);
+            if (!reg) return;
+
+            currentSelectedToken = qrToken;
+
+            const titleEl = document.getElementById('active-pass-title');
+            const detailsEl = document.getElementById('active-pass-details');
+            const tokenEl = document.getElementById('active-pass-token');
+            const statusEl = document.getElementById('active-pass-status');
+            const holderEl = document.getElementById('active-pass-holder');
+            const canvas = document.getElementById('user-qr-canvas');
+
+            if (titleEl) titleEl.textContent = reg.eventTitle;
+            if (detailsEl) detailsEl.textContent = `${reg.eventDate} • ${reg.eventVenue || 'Main Auditorium'}`;
+            if (tokenEl) tokenEl.textContent = reg.qr_token;
+            if (holderEl) holderEl.textContent = `Holder: ${reg.userName}`;
+
+            if (statusEl) {
+                if (reg.attended) {
+                    statusEl.innerHTML = `
+                        <span class="text-xs font-mono text-purple-400 bg-purple-500/10 px-3.5 py-1.5 rounded-full border border-purple-500/30 inline-flex items-center">
+                            <i class="fa-solid fa-circle-check mr-1.5"></i> Scanned & Verified (${reg.attendedAt || 'Entry'})
+                        </span>
+                        <p class="text-[11px] text-gray-400 font-mono mt-1">Holder: <strong class="text-white">${reg.userName}</strong></p>
+                    `;
+                } else {
+                    statusEl.innerHTML = `
+                        <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/30 inline-flex items-center">
+                            <i class="fa-solid fa-shield-check mr-1.5"></i> Token Valid & Ready
+                        </span>
+                        <p class="text-[11px] text-gray-400 font-mono mt-1">Holder: <strong class="text-white">${reg.userName}</strong></p>
+                    `;
+                }
+            }
+
+            if (canvas) ZeroInteract.drawQrCanvas(canvas, qrToken);
+
+            // If user clicked "View QR Pass", open the recording modal
+            if (openModal) {
+                const modal = document.getElementById('qr-pass-modal');
+                const modalTitle = document.getElementById('modal-pass-title');
+                const modalToken = document.getElementById('modal-qr-token-val');
+                const modalHolder = document.getElementById('modal-pass-holder');
+                const modalCanvas = document.getElementById('modal-qr-canvas');
+
+                if (modalTitle) modalTitle.textContent = reg.eventTitle;
+                if (modalToken) modalToken.textContent = reg.qr_token;
+                if (modalHolder) modalHolder.textContent = `Holder: ${reg.userName} (${reg.userEmail || 'Verified'})`;
+                if (modalCanvas) ZeroInteract.drawQrCanvas(modalCanvas, qrToken);
+
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+            }
+        }
+
+        function closeQrPassModal() {
+            const modal = document.getElementById('qr-pass-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function copyModalQrToken() {
+            if (!currentSelectedToken) return;
+            navigator.clipboard.writeText(currentSelectedToken).then(() => {
+                ZeroInteract.showToast(`Copied QR Token "${currentSelectedToken}" to clipboard!`, 'success');
+            }).catch(() => {
+                ZeroInteract.showToast(`Token: ${currentSelectedToken}`, 'info');
+            });
+        }
+
+        function copyCurrentQrToken() {
+            copyModalQrToken();
+        }
+
+        // Render Discovery Events with 3D Flip Card
+        function renderDiscoveryCatalog() {
+            const grid = document.getElementById('user-discovery-grid');
+            if (!grid) return;
+
+            const events = ZeroInteract.getEvents();
+            grid.innerHTML = '';
+
+            events.forEach(event => {
+                const isFree = event.price === 0;
+                const priceFormatted = isFree ? 'Free (₹0)' : `₹${event.price}`;
+                const priceBadge = isFree 
+                    ? `<span class="text-xs font-bold text-accentRed flex items-center font-mono">Free Registration</span>`
+                    : `<span class="text-xs font-bold text-gray-200 flex items-center font-mono">₹${event.price} / Pass</span>`;
+
+                const cardContainer = document.createElement('div');
+                cardContainer.className = 'flip-card';
+
+                cardContainer.innerHTML = `
+                    <div class="flip-card-inner">
+                        <!-- FRONT OF CARD -->
+                        <div class="flip-card-front bg-darkBg p-6 rounded-3xl border border-red-950/60 shadow-xl hover:border-accentRed/50 transition-colors">
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="px-3 py-1 rounded-full text-[11px] font-semibold border ${event.badgeColor}">
+                                        ${event.category}
+                                    </span>
+                                    <span class="text-[10px] font-mono text-gray-400 bg-cardBg px-2 py-0.5 rounded border border-red-950/40">
+                                        <i class="fa-solid fa-rotate mr-1 text-accentRed"></i> Hover
+                                    </span>
+                                </div>
+                                <h3 class="font-extrabold text-lg text-white group-hover:text-accentRed transition-colors pt-1 line-clamp-2">
+                                    ${event.title}
+                                </h3>
+                                <p class="text-xs text-gray-400 leading-relaxed line-clamp-3">
+                                    ${event.shortSummary || event.description}
+                                </p>
+                            </div>
+
+                            <div class="space-y-3 pt-3 border-t border-red-950/40">
+                                <div class="text-xs text-gray-400 space-y-1">
+                                    <p class="flex items-center"><i class="fa-regular fa-calendar mr-2 text-accentRed text-xs"></i> ${event.date}</p>
+                                    <p class="flex items-center truncate"><i class="fa-solid fa-location-dot mr-2 text-accentPurple text-xs"></i> ${event.venue}</p>
+                                </div>
+                                <div class="flex items-center justify-between pt-1">
+                                    ${priceBadge}
+                                    <span class="text-xs font-bold text-accentRed flex items-center gap-1">
+                                        Details <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BACK OF CARD (FLIPPED ON HOVER) -->
+                        <div class="flip-card-back bg-cardElevated p-6 rounded-3xl border border-purple-500/50 shadow-2xl flex flex-col justify-between">
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[10px] uppercase font-bold text-accentPurple tracking-widest font-mono">Quick Overview</span>
+                                    <span class="text-xs font-mono font-bold text-white bg-darkBg px-2 py-0.5 rounded border border-purple-950">${priceFormatted}</span>
+                                </div>
+                                <h4 class="font-bold text-base text-white line-clamp-2">${event.title}</h4>
+                                <p class="text-xs text-gray-300 line-clamp-3 leading-relaxed">${event.description}</p>
+                                
+                                <div class="text-[11px] text-gray-400 space-y-1 pt-1">
+                                    <p><strong class="text-gray-200">Host:</strong> ${event.organizer || 'ZeroInteract Network'}</p>
+                                    <p class="truncate"><strong class="text-gray-200">Tracks:</strong> ${event.agenda && event.agenda[0] ? event.agenda[0].slice(8) : 'Full Day Event'}</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 pt-3 border-t border-red-950/60">
+                                <a href="event.html?id=${event.id}" onclick="event.stopPropagation()" class="w-full py-2.5 rounded-xl font-bold text-xs bg-darkBg border border-red-950 hover:border-accentRed text-white text-center block transition-all flex items-center justify-center space-x-1.5 shadow-md">
+                                    <i class="fa-solid fa-circle-info text-accentRed"></i>
+                                    <span>View Elaborated Info Page</span>
+                                </a>
+                                <button onclick="event.stopPropagation(); handleBuyTicket('${event.id}')" class="w-full py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-accentRed to-accentPurple text-white hover:opacity-90 transition-all shadow-md shadow-accentRed/30 flex items-center justify-center space-x-1.5">
+                                    <i class="fa-solid fa-ticket"></i>
+                                    <span>Buy Ticket (₹${event.price})</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Clicking anywhere on card opens event page
+                cardContainer.addEventListener('click', (e) => {
+                    if (!e.target.closest('a') && !e.target.closest('button')) {
+                        window.location.href = `event.html?id=${event.id}`;
+                    }
+                });
+
+                grid.appendChild(cardContainer);
+            });
+        }
+
+        // Transaction Logic
+        function handleBuyTicket(eventId) {
+            const session = ZeroInteract.getAttendeeSession();
+            if (!session || !session.isLoggedIn) {
+                ZeroInteract.showToast("Please sign in with your name first!", "error");
+                loadUserPortal();
+                return;
+            }
+
+            const res = ZeroInteract.buyTicket(eventId);
+            if (res.success) {
+                ZeroInteract.showToast(`Pass issued for "${res.registration.eventTitle}" to ${res.registration.userName}! Token: ${res.registration.qr_token}`, 'success');
+                renderMyRegistrations();
+                displayPass(res.registration.qr_token);
+            } else if (res.reason === 'INSUFFICIENT_FUNDS') {
+                const modal = document.getElementById('balance-modal');
+                const msg = document.getElementById('balance-modal-msg');
+                if (msg) msg.textContent = `This ticket pass requires ₹${res.required}, but your current wallet balance is only ₹${res.current}.`;
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+                ZeroInteract.showToast(`Insufficient funds: ₹${res.current} available, ₹${res.required} required`, 'error');
+            }
+        }
+
+        function closeBalanceModal() {
+            const modal = document.getElementById('balance-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function topUpWallet(amt) {
+            const current = ZeroInteract.getWalletBalance();
+            ZeroInteract.setWalletBalance(current + amt);
+            closeBalanceModal();
+            ZeroInteract.showToast(`Added ₹${amt} to wallet! Current balance: ₹${current + amt}`, 'success');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadUserPortal();
+
+            window.addEventListener('storage', (e) => {
+                if (e.key === ZeroInteract.STORAGE_KEYS.WALLET) {
+                    ZeroInteract.renderAllWallets();
+                }
+                if (e.key === ZeroInteract.STORAGE_KEYS.REGISTRATIONS) {
+                    renderMyRegistrations();
+                }
+                if (e.key === ZeroInteract.STORAGE_KEYS.EVENTS) {
+                    renderDiscoveryCatalog();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

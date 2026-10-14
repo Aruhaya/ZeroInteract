@@ -1,0 +1,97 @@
+/* ================= ZeroInteract Theme & Global Styles ================= */
+:root {
+    --dark-bg: #0f050b;
+    --card-bg: #1a0916;
+    --card-elevated: #240c1f;
+    --accent-red: #ff1f59;
+    --accent-purple: #9d00ff;
+    --border-color: rgba(157, 0, 255, 0.2);
+}
+
+body {
+    background-color: var(--dark-bg);
+    color: #f3f4f6;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* ================= 3D Card Flip Animation ================= */
+.flip-card {
+    background-color: transparent;
+    perspective: 1200px;
+    height: 400px;
+    cursor: pointer;
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: left;
+    transition: transform 0.75s cubic-bezier(0.2, 0.85, 0.4, 1.2);
+    transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner,
+.flip-card.flipped .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 1.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.flip-card-front {
+    transform: rotateY(0deg);
+    z-index: 2;
+}
+
+.flip-card-back {
+    transform: rotateY(180deg);
+    z-index: 1;
+}
+
+/* ================= Animations ================= */
+@keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+
+.animate-scanline {
+    animation: scanline 2.2s linear infinite;
+}
+
+@keyframes pulseGlow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.animate-pulse-glow {
+    animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #0f050b;
+}
+::-webkit-scrollbar-thumb {
+    background: #47153a;
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #ff1f59;
+}
+
